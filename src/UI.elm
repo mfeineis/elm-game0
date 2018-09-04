@@ -2,11 +2,13 @@ module UI
     exposing
         ( Intent(..)
         , mainMenu
+        , mark
         )
 
 import Element exposing (Element, column, el, link, row, text)
 import Element.Input as Input exposing (button)
 import Html exposing (Html)
+import Html.Attributes as Attr
 
 
 type Intent
@@ -24,3 +26,14 @@ mainMenu =
                 }
             ]
         )
+
+
+mark : String -> { a | left : Float, top : Float } -> Html intent
+mark txt { left, top } =
+    Html.div
+        [ Attr.style "position" "absolute"
+        , Attr.style "left" ((String.fromFloat left) ++ "px")
+        , Attr.style "top" ((String.fromFloat top) ++ "px")
+        ]
+        [ Html.text txt
+        ]
