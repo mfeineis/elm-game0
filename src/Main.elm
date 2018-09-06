@@ -1,7 +1,7 @@
 module Main exposing (main)
 
 import Browser exposing (Document, UrlRequest(..))
-import Browser.Events exposing (onAnimationFrame, onMouseDown, onMouseUp)
+import Browser.Events exposing (onAnimationFrame, onMouseDown, onMouseMove, onMouseUp)
 import Browser.Navigation as Navigation
 import Element
 import Html exposing (Html)
@@ -33,18 +33,22 @@ main =
 
 
 decodeMouseCoord : (MouseCoord -> msg) -> Decoder msg
-decodeMouseCoord tagger =
+decodeMouseCoord toMsg =
     Decode.map2 MouseCoord
         (Decode.field "clientX" Decode.float)
         (Decode.field "clientY" Decode.float)
-        |> Decode.andThen (Decode.succeed << tagger)
+        |> Decode.andThen (Decode.succeed << toMsg)
 
 
 subscriptions : Model -> Sub Msg
-subscriptions _ =
+subscriptions { isMouseDown } =
     Sub.batch
         [ onAnimationFrame (Fact << AnimationFrameElapsed)
         , onMouseDown (decodeMouseCoord (Fact << MouseHeldDown))
+        , if isMouseDown then
+              onMouseMove (decodeMouseCoord (Fact << MouseMovedWhileHeldDown))
+          else
+              Sub.none
         , onMouseUp (decodeMouseCoord (Fact << MouseReleased))
         ]
 
@@ -52,6 +56,7 @@ subscriptions _ =
 init : () -> Url -> Navigation.Key -> ( Model, Cmd Msg )
 init _ url navKey =
     { before = Time.millisToPosix 0
+    , isMouseDown = False
     , lastPosition = { left = 0, top = 0 }
     , navKey = navKey
     , now = Time.millisToPosix 0
@@ -65,6 +70,7 @@ init _ url navKey =
 
 type alias Model =
     { before : Posix
+    , isMouseDown : Bool
     , lastPosition : MouseCoord
     , navKey : Navigation.Key
     , now : Posix
@@ -95,6 +101,7 @@ type Fact
     | GameStarted Posix
     | LinkClicked UrlRequest
     | MouseHeldDown MouseCoord
+    | MouseMovedWhileHeldDown MouseCoord
     | MouseReleased MouseCoord
     | UrlChanged Url
 
@@ -124,11 +131,17 @@ update msg model =
                     model |> fx []
 
                 MouseHeldDown coords ->
-                    model |> fx [] |> Debug.log ("MouseHeldDown " ++ Debug.toString coords)
+                    { model | isMouseDown = True }
+                        |> fx []
+                        |> Debug.log ("MouseHeldDown " ++ Debug.toString coords)
+
+                MouseMovedWhileHeldDown coords ->
+                    model |> fx [] |> Debug.log ("MouseMovedWhileHeldDown " ++ Debug.toString coords)
 
                 MouseReleased coords ->
                     { model
-                        | lastPosition = model.position
+                        | isMouseDown = False
+                        , lastPosition = model.position
                         , target = coords
                     } |> fx [] |> Debug.log ("MouseReleased " ++ Debug.toString coords)
 
