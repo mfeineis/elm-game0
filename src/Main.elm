@@ -41,17 +41,12 @@ decodeMouseCoord tagger =
 
 
 subscriptions : Model -> Sub Msg
-subscriptions { state } =
-    case state of
-        Running ->
-            Sub.batch
-                [ onAnimationFrame (Fact << AnimationFrameElapsed)
-                , onMouseDown (decodeMouseCoord (Fact << MouseHeldDown))
-                , onMouseUp (decodeMouseCoord (Fact << MouseReleased))
-                ]
-
-        _ ->
-            Sub.none
+subscriptions _ =
+    Sub.batch
+        [ onAnimationFrame (Fact << AnimationFrameElapsed)
+        , onMouseDown (decodeMouseCoord (Fact << MouseHeldDown))
+        , onMouseUp (decodeMouseCoord (Fact << MouseReleased))
+        ]
 
 
 init : () -> Url -> Navigation.Key -> ( Model, Cmd Msg )
@@ -121,7 +116,6 @@ update msg model =
                     }
                         |> placeHero
                         |> fx []
-                        |> Debug.log ("AnimationFrameElapsed" ++ Debug.toString now)
 
                 LinkClicked (Browser.Internal url) ->
                     model |> fx []
