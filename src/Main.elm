@@ -33,11 +33,11 @@ main =
 
 
 decodeMouseCoord : (MouseCoord -> msg) -> Decoder msg
-decodeMouseCoord toMsg =
+decodeMouseCoord msgWith =
     Decode.map2 MouseCoord
         (Decode.field "clientX" Decode.float)
         (Decode.field "clientY" Decode.float)
-        |> Decode.andThen (Decode.succeed << toMsg)
+        |> Decode.andThen (\coord -> Decode.succeed (msgWith coord))
 
 
 subscriptions : Model -> Sub Msg
