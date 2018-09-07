@@ -9,13 +9,13 @@ import Browser.Events
         , onMouseUp
         )
 import Browser.Navigation as Navigation
-import Character exposing (Character)
+import Game.Character exposing (Character)
+import Game.Ui as Ui exposing (Intent(..))
 import Element
 import Html
 import Json.Decode as Decode exposing (Decoder, Value)
 import Task
 import Time exposing (Posix)
-import UI exposing (Intent(..))
 import Url exposing (Url)
 
 
@@ -195,8 +195,8 @@ update msg model =
                     if model.mode == Exploring then
                         model
                             |> fx
-                               [ cmd (DialogInitiated character)
-                               ]
+                                [ cmd (DialogInitiated character)
+                                ]
                     else
                         model |> fx []
     in
@@ -253,23 +253,23 @@ view model =
                 Exploring ->
                     { title = "Exploring - Game"
                     , body =
-                        [ UI.someScene
-                        , UI.mark "(X)" model.target
-                        , UI.mark "o" model.position
+                        [ Ui.someScene
+                        , Ui.mark "(X)" model.target
+                        , Ui.mark "o" model.position
                         ]
                     }
 
                 Chatting participants ->
                     { title = "Chatting - Game"
                     , body =
-                        [ UI.someDialog
+                        [ Ui.someDialog
                         ]
                     }
 
         Unstarted ->
             { title = "Main Menu"
             , body =
-                [ UI.mainMenu
+                [ Ui.mainMenu
                 ]
             }
 

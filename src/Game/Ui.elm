@@ -1,4 +1,4 @@
-module UI
+module Game.Ui
     exposing
         ( Intent(..)
         , mainMenu
@@ -7,9 +7,9 @@ module UI
         , someScene
         )
 
-import Character exposing (Character(..))
 import Element exposing (Element, column, el, layout, link, row, text)
 import Element.Input as Input exposing (button)
+import Game.Character exposing (Character(..))
 import Html exposing (Html)
 import Html.Attributes as Attr
 
