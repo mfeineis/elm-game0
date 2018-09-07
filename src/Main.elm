@@ -22,8 +22,8 @@ main : Program () Model Msg
 main =
     Browser.application
         { init = init
-        , onUrlChange = TechnicalFact << UrlChanged
-        , onUrlRequest = TechnicalFact << LinkClicked
+        , onUrlChange = Fact << UrlChanged
+        , onUrlRequest = Fact << LinkClicked
         , subscriptions = subscriptions
         , update = update
         , view =
@@ -49,13 +49,13 @@ decodeMouseCoord msgFromCoord =
 subscriptions : Model -> Sub Msg
 subscriptions { isMouseDown } =
     Sub.batch
-        [ onAnimationFrame (TechnicalFact << AnimationFrameElapsed)
-        , onMouseDown (decodeMouseCoord (TechnicalFact << MouseHeldDown))
+        [ onAnimationFrame (Fact << AnimationFrameElapsed)
+        , onMouseDown (decodeMouseCoord (Fact << MouseHeldDown))
         , if isMouseDown then
-            onMouseMove (decodeMouseCoord (TechnicalFact << MouseMovedWhileHeldDown))
+            onMouseMove (decodeMouseCoord (Fact << MouseMovedWhileHeldDown))
           else
             Sub.none
-        , onMouseUp (decodeMouseCoord (TechnicalFact << MouseReleased))
+        , onMouseUp (decodeMouseCoord (Fact << MouseReleased))
         ]
 
 
@@ -102,8 +102,9 @@ type alias MouseCoord =
     }
 
 
-type TechnicalFact
+type Fact
     = AnimationFrameElapsed Posix
+    | GameStarted Posix
     | LinkClicked UrlRequest
     | MouseHeldDown MouseCoord
     | MouseMovedWhileHeldDown MouseCoord
@@ -111,20 +112,15 @@ type TechnicalFact
     | UrlChanged Url
 
 
-type DomainFact
-   = GameStarted Posix
-
-
 type Msg
-    = DomainFact DomainFact
+    = Fact Fact
     | Intent Intent
-    | TechnicalFact TechnicalFact
 
 
 update : Msg -> Model -> ( Model, Cmd Msg )
 update msg model =
     let
-        applyTechnical fact =
+        apply fact =
             case fact of
                 AnimationFrameElapsed now ->
                     { model
@@ -132,6 +128,13 @@ update msg model =
                         , now = now
                     }
                         |> placeHero
+                        |> fx []
+
+                GameStarted startTime ->
+                    { model
+                        | state = Running
+                        , startTime = startTime
+                    }
                         |> fx []
 
                 LinkClicked (Browser.Internal url) ->
@@ -168,29 +171,17 @@ update msg model =
                     if model.state == Unstarted then
                         model
                             |> fx
-                                [ Task.perform (DomainFact << GameStarted) Time.now
+                                [ Task.perform (Fact << GameStarted) Time.now
                                 ]
                     else
                         model |> fx []
-
-        applyDomain fact =
-            case fact of
-                GameStarted startTime ->
-                    { model
-                        | state = Running
-                        , startTime = startTime
-                    }
-                        |> fx []
     in
     case msg of
-        DomainFact fact ->
-            applyDomain fact
+        Fact fact ->
+            apply fact
 
         Intent intent ->
             interpret intent
-
-        TechnicalFact fact ->
-            applyTechnical fact
 
 
 placeHero : Model -> Model
