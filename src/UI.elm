@@ -3,8 +3,11 @@ module UI
         ( Intent(..)
         , mainMenu
         , mark
+        , someDialog
+        , someScene
         )
 
+import Character exposing (Character(..))
 import Element exposing (Element, column, el, layout, link, row, text)
 import Element.Input as Input exposing (button)
 import Html exposing (Html)
@@ -13,6 +16,7 @@ import Html.Attributes as Attr
 
 type Intent
     = StartGame
+    | TalkTo Character
 
 
 mainMenu : Html Intent
@@ -26,6 +30,25 @@ mainMenu =
                 }
             ]
         )
+
+
+someScene : Html Intent
+someScene =
+    layout []
+        (column []
+            [ button []
+                { label = el [] (text "Talk to some tree")
+                , onPress = Just (TalkTo SomeTree)
+                }
+            ]
+        )
+
+
+someDialog : Html Intent
+someDialog =
+    Html.div []
+        [ Html.text "Hello Tree!"
+        ]
 
 
 mark : String -> { a | left : Float, top : Float } -> Html intent

@@ -9,6 +9,7 @@ import Browser.Events
         , onMouseUp
         )
 import Browser.Navigation as Navigation
+import Character exposing (Character)
 import Element
 import Html
 import Json.Decode as Decode exposing (Decoder, Value)
@@ -59,25 +60,11 @@ subscriptions { isMouseDown } =
         ]
 
 
-init : () -> Url -> Navigation.Key -> ( Model, Cmd Msg )
-init _ url navKey =
-    { before = Time.millisToPosix 0
-    , isMouseDown = False
-    , lastPosition = { left = 0, top = 0 }
-    , navKey = navKey
-    , now = Time.millisToPosix 0
-    , position = { left = 0, top = 0 }
-    , startTime = Time.millisToPosix 0
-    , state = Unstarted
-    , target = { left = 0, top = 0 }
-    }
-        |> fx []
-
-
 type alias Model =
     { before : Posix
     , isMouseDown : Bool
     , lastPosition : MouseCoord
+    , mode : GameMode
     , navKey : Navigation.Key
     , now : Posix
     , position : MouseCoord
@@ -85,6 +72,22 @@ type alias Model =
     , state : GameState
     , target : MouseCoord
     }
+
+
+init : () -> Url -> Navigation.Key -> ( Model, Cmd Msg )
+init _ url navKey =
+    { before = Time.millisToPosix 0
+    , isMouseDown = False
+    , lastPosition = { left = 0, top = 0 }
+    , navKey = navKey
+    , now = Time.millisToPosix 0
+    , mode = Exploring
+    , position = { left = 0, top = 0 }
+    , startTime = Time.millisToPosix 0
+    , state = Unstarted
+    , target = { left = 0, top = 0 }
+    }
+        |> fx []
 
 
 type alias Settings =
@@ -96,6 +99,11 @@ type GameState
     | Unstarted
 
 
+type GameMode
+    = Exploring
+    | Chatting (List Character)
+
+
 type alias MouseCoord =
     { left : Float
     , top : Float
@@ -104,6 +112,7 @@ type alias MouseCoord =
 
 type Fact
     = AnimationFrameElapsed Posix
+    | DialogInitiated Character
     | GameStarted Posix
     | LinkClicked UrlRequest
     | MouseHeldDown MouseCoord
@@ -128,6 +137,12 @@ update msg model =
                         , now = now
                     }
                         |> placeHero
+                        |> fx []
+
+                DialogInitiated character ->
+                    { model
+                        | mode = Chatting [ character ]
+                    }
                         |> fx []
 
                 GameStarted startTime ->
@@ -173,6 +188,15 @@ update msg model =
                             |> fx
                                 [ Task.perform (Fact << GameStarted) Time.now
                                 ]
+                    else
+                        model |> fx []
+
+                TalkTo character ->
+                    if model.mode == Exploring then
+                        model
+                            |> fx
+                               [ cmd (DialogInitiated character)
+                               ]
                     else
                         model |> fx []
     in
@@ -225,12 +249,22 @@ view : Model -> Document Intent
 view model =
     case model.state of
         Running ->
-            { title = "Game"
-            , body =
-                [ UI.mark "(X)" model.target
-                , UI.mark "o" model.position
-                ]
-            }
+            case model.mode of
+                Exploring ->
+                    { title = "Exploring - Game"
+                    , body =
+                        [ UI.someScene
+                        , UI.mark "(X)" model.target
+                        , UI.mark "o" model.position
+                        ]
+                    }
+
+                Chatting participants ->
+                    { title = "Chatting - Game"
+                    , body =
+                        [ UI.someDialog
+                        ]
+                    }
 
         Unstarted ->
             { title = "Main Menu"
@@ -247,3 +281,8 @@ view model =
 fx : List (Cmd msg) -> model -> ( model, Cmd msg )
 fx cmds model =
     ( model, Cmd.batch cmds )
+
+
+cmd : Fact -> Cmd Msg
+cmd fact =
+    Task.perform Fact (Task.succeed fact)
